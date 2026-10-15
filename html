@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -104,7 +103,8 @@
                 <button
                     type="submit"
                     id="submit-btn"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-200 transition duration-200 text-sm">
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-200 transition-colors duration-150"
+                >
                     登録する
                 </button>
 
@@ -168,10 +168,20 @@
             <p class="text-xs text-slate-500 leading-relaxed">
                 確認メールが届かない場合は、迷惑メールフォルダもご確認ください。
             </p>
-　　　　　　　　<a href="https://forms.gle/a16cHw5T2TLbLRmw9" id="back-btn" class="inline-block text-center w-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-xl transition text-sm">
-             本登録へ
-             </a>
 
+            <!-- 本登録リンク：コピー用UI (js.do などリダイレクト不可環境向け) -->
+            <div class="mt-3">
+                <div class="flex gap-2">
+                    <input id="full-reg-url" type="text" readonly value="https://forms.gle/a16cHw5T2TLbLRmw9" class="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-700" />
+                    <button id="copy-link-btn" type="button" class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">リンクをコピー</button>
+                </div>
+                <p id="copy-success" class="hidden text-xs text-emerald-600 mt-2">リンクをクリップボードにコピーしました。</p>
+            </div>
+
+            <!-- 入力画面に戻る（JSで制御） -->
+            <button id="back-btn" type="button" class="mt-4 w-full bg-white border border-slate-200 text-slate-700 font-medium py-3 px-4 rounded-xl hover:bg-slate-50">
+                入力画面に戻る
+            </button>
 
         </div>
 
@@ -195,6 +205,11 @@
 
     const registeredEmail = document.getElementById('registered-email');
     const backBtn = document.getElementById('back-btn');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+    const fullRegUrlInput = document.getElementById('full-reg-url');
+    const copySuccess = document.getElementById('copy-success');
+
+    const registrationUrl = fullRegUrlInput ? fullRegUrlInput.value : 'https://forms.gle/a16cHw5T2TLbLRmw9';
 
     let previewUrl = null;
     let processing = false;
@@ -336,11 +351,39 @@
         }
     });
 
+    // コピー機能 (js.do などリダイレクトできない環境向け)
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', async () => {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(registrationUrl);
+                } else {
+                    // フォ��ルバック
+                    const ta = document.createElement('textarea');
+                    ta.value = registrationUrl;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+
+                if (copySuccess) {
+                    copySuccess.classList.remove('hidden');
+                    setTimeout(() => copySuccess.classList.add('hidden'), 2500);
+                }
+            } catch (err) {
+                showError('リンクのコピーに失敗しました。手動でコピーしてください。');
+            }
+        });
+    }
+
     // 入力画面に戻る
-    backBtn.addEventListener('click', () => {
-        showStep('input');
-        clearError();
-    });
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            showStep('input');
+            clearError();
+        });
+    }
 
     // ページ離脱時にプレビュー用URLを解放
     window.addEventListener('beforeunload', releasePreview);
